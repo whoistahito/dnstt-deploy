@@ -24,7 +24,10 @@ services:
     # - Ensure your firewall/security group allows inbound UDP/53.
     ports:
       - "${DNSTT_PORT:-5300}:${DNSTT_PORT:-5300}/udp"
-      - "53:${DNSTT_PORT:-5300}/udp"
+      # Optional: also expose UDP/53 on the host and forward it to the container.
+      # Disabled by default because UDP/53 is commonly already in use on the host (system resolver/dnsmasq/etc).
+      # To enable, set HOST_DNS_PORT=53 in your environment (and ensure firewall allows UDP/53).
+      - "${HOST_DNS_PORT:-53}:${DNSTT_PORT:-5300}/udp"
 
 volumes:
   dnstt-config:
