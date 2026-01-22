@@ -21,7 +21,8 @@ Edit `docker-compose.yml` (or a `.env` used by compose) and set your `NS_SUBDOMA
 
 Notes on ports:
 - The compose file maps `UDP/${DNSTT_PORT:-5300}` on the host to the same port in the container. If you change `DNSTT_PORT`, keep the mapping in sync.
-- If you need the service to appear on host UDP/53, set `DNSTT_PORT=53` and ensure nothing else is bound to UDP/53 on the host.
+- The mapping for host UDP/53 is commented out by default in `docker-compose.yml` to prevent conflicts.
+- If you need the service to appear on host UDP/53, uncomment that line in `docker-compose.yml` and ensure nothing else is bound to UDP/53 on the host.
 
 ### Required environment variables
 - `NS_SUBDOMAIN` (example: `t.example.com`)
@@ -167,6 +168,8 @@ After server deployment, you'll receive a public key. Use it to connect:
 ```bash
 dnstt-client -udp DNS_SERVER_IP:53 -pubkey-file server.pub t.example.com 127.0.0.1:7000
 ```
+
+> **Note for Docker users:** If you deployed using Docker and did not enable the host port 53 mapping, replace `:53` with `:5300` (or your configured `DNSTT_PORT`).
 
 #### DNS_SERVER_IP
 
