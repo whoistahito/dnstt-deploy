@@ -12,7 +12,7 @@ A comprehensive automation script for deploying and managing [dnstt](https://www
 This repo also includes a Docker image that runs `dnstt-server` **directly** (no systemd, no iptables inside the container).
 
 ### What the container does
-- Downloads the official `dnstt-server` binary from `https://dnstt.network` and verifies it with `SHA256SUMS`
+- Includes the official `dnstt-server` binary (downloaded and verified during build)
 - Generates/keeps keys under `/etc/dnstt` (use a volume to persist them)
 - Starts `dnstt-server` in the foreground
 

@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DNSTT_BASE_URL="${DNSTT_BASE_URL:-https://dnstt.network}"
-ARCH="${ARCH:-}"
 DNSTT_PORT="${DNSTT_PORT:-5300}"
-NS_SUBDOMAIN="${NS_SUBDOMAIN:-}"
+
+# Accept common spellings/casing:
+# - NS_SUBDOMAIN (preferred)
+# - NS_subdomain (user typo but common)
+# - ns_subdomain (less common)
+NS_SUBDOMAIN="${NS_SUBDOMAIN:-${NS_subdomain:-${ns_subdomain:-}}}"
+
 MTU_VALUE="${MTU_VALUE:-1232}"
 
 # Tunnel target for dnstt-server (what the tunnel forwards to)
@@ -21,39 +25,8 @@ fail() { echo "[dnstt][ERROR] $*" 1>&2; exit 1; }
 require_env() {
   local name="$1"
   if [[ -z "${!name:-}" ]]; then
-    fail "Missing required env var: $name"
+    fail "Missing required env var: $name\n\nExamples:\n  docker run -e NS_SUBDOMAIN=t.example.com ...\n  docker compose: set environment: NS_SUBDOMAIN: 't.example.com'"
   fi
-}
-
-detect_arch() {
-  local a
-  a="$(uname -m)"
-  case "$a" in
-    x86_64) echo "amd64";;
-    aarch64|arm64) echo "arm64";;
-    armv7l|armv6l) echo "arm";;
-    i386|i686) echo "386";;
-    *) fail "Unsupported architecture: $a";;
-  esac
-}
-
-download_and_verify_dnstt_server() {
-  local arch="$1"
-  local filename="dnstt-server-linux-${arch}"
-  local tmpdir
-  tmpdir="$(mktemp -d)"
-
-  log "Downloading dnstt-server (${filename}) from ${DNSTT_BASE_URL}..."
-  curl -fsSL -o "${tmpdir}/${filename}" "${DNSTT_BASE_URL}/${filename}"
-  curl -fsSL -o "${tmpdir}/SHA256SUMS" "${DNSTT_BASE_URL}/SHA256SUMS"
-
-  (cd "$tmpdir" && sha256sum -c <(grep "${filename}" SHA256SUMS))
-
-  chmod +x "${tmpdir}/${filename}"
-  mv "${tmpdir}/${filename}" /usr/local/bin/dnstt-server
-  rm -rf "$tmpdir"
-
-  log "Installed /usr/local/bin/dnstt-server"
 }
 
 generate_keys_if_missing() {
@@ -68,6 +41,7 @@ generate_keys_if_missing() {
   fi
 
   log "Generating keypair..."
+  # The binary is now baked into the image at /usr/local/bin/dnstt-server
   dnstt-server -gen-key -privkey-file "$priv" -pubkey-file "$pub"
 
   chmod 600 "$priv"
@@ -79,14 +53,6 @@ generate_keys_if_missing() {
 
 main() {
   require_env NS_SUBDOMAIN
-
-  if [[ -z "$ARCH" ]]; then
-    ARCH="$(detect_arch)"
-  fi
-
-  if [[ ! -x /usr/local/bin/dnstt-server ]]; then
-    download_and_verify_dnstt_server "$ARCH"
-  fi
 
   if [[ -z "$KEY_PREFIX" ]]; then
     KEY_PREFIX="${NS_SUBDOMAIN//./_}"

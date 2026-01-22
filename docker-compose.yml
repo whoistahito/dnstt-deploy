@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       # Required
-      NS_SUBDOMAIN: "t.example.com"
+      NS_SUBDOMAIN: "${NS_SUBDOMAIN}"
       # Optional
       DNSTT_PORT: "5300"
       MTU_VALUE: "1232"
