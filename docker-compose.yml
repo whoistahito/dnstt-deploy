@@ -14,12 +14,17 @@ services:
       TUNNEL_PORT: "22"
     volumes:
       - dnstt-config:/etc/dnstt
-    # You can expose UDP/53 directly, but on Linux that usually requires running
-    # the container with enough privileges/capabilities.
-    # Safer default: map host port 5300 -> container port 5300.
+    # Expose UDP/53 on the host while keeping the container listening on UDP/5300 by default.
+    #
+    # - Container always listens on DNSTT_PORT (default 5300).
+    # - Host can additionally expose UDP/53 and forward it to container UDP/5300.
+    #
+    # Notes:
+    # - Publishing host UDP/53 may conflict with other DNS services already bound to 53 on the host.
+    # - Ensure your firewall/security group allows inbound UDP/53.
     ports:
       - "${DNSTT_PORT:-5300}:${DNSTT_PORT:-5300}/udp"
-      # If you really want UDP/53 on the host, set DNSTT_PORT=53 and keep the mapping in sync.
+      - "53:${DNSTT_PORT:-5300}/udp"
 
 volumes:
   dnstt-config:
