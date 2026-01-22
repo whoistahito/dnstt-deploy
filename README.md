@@ -7,6 +7,36 @@
 
 A comprehensive automation script for deploying and managing [dnstt](https://www.bamsoftware.com/software/dnstt) DNS tunnel servers on Linux systems. This script handles everything from installation to configuration, making DNS tunnel deployment effortless.
 
+## Docker (containerized dnstt-server)
+
+This repo also includes a Docker image that runs `dnstt-server` **directly** (no systemd, no iptables inside the container).
+
+### What the container does
+- Downloads the official `dnstt-server` binary from `https://dnstt.network` and verifies it with `SHA256SUMS`
+- Generates/keeps keys under `/etc/dnstt` (use a volume to persist them)
+- Starts `dnstt-server` in the foreground
+
+### Quick start (docker compose)
+Edit `docker-compose.yml` (or a `.env` used by compose) and set your `NS_SUBDOMAIN`.
+
+Notes on ports:
+- The compose file maps `UDP/${DNSTT_PORT:-5300}` on the host to the same port in the container. If you change `DNSTT_PORT`, keep the mapping in sync.
+- If you need the service to appear on host UDP/53, set `DNSTT_PORT=53` and ensure nothing else is bound to UDP/53 on the host.
+
+### Required environment variables
+- `NS_SUBDOMAIN` (example: `t.example.com`)
+
+### Optional environment variables
+- `DNSTT_PORT` (default `5300`)
+- `MTU_VALUE` (default `1232`)
+- `TUNNEL_HOST` (default `127.0.0.1`)
+- `TUNNEL_PORT` (default `22`)
+
+### Limitations (important)
+Running a DNS tunnel server in Docker is different from running it on the host:
+- The original `dnstt-deploy.sh` script configures **systemd** and **iptables** on the host. The container image **does not** do that.
+- If you want UDP/53 redirection (host port 53 → 5300) you must handle that on the **host** (or just bind the container directly to UDP/53).
+
 ## DNS Domain Setup
 
 Before using this script, you need to properly configure your domain's DNS records. Here's the required setup:
@@ -270,7 +300,7 @@ Consider the performance trade-offs when using very low MTU values.
 ```bash
 dnstt-deploy  # Use menu option 3 to check status
 # Or manually:
-sudo systemctl status dnstt-server    # Check service status
+sudo systemctl status dnstt-server    # Check status
 sudo journalctl -u dnstt-server -n 50 # Check logs for errors
 ls -la /usr/local/bin/dnstt-server    # Verify binary permissions
 ```

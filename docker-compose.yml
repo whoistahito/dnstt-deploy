@@ -1,0 +1,25 @@
+services:
+  dnstt-server:
+    build: .
+    container_name: dnstt-server
+    restart: unless-stopped
+    environment:
+      # Required
+      NS_SUBDOMAIN: "t.example.com"
+      # Optional
+      DNSTT_PORT: "5300"
+      MTU_VALUE: "1232"
+      # Where to forward tunneled connections (SSH is common)
+      TUNNEL_HOST: "127.0.0.1"
+      TUNNEL_PORT: "22"
+    volumes:
+      - dnstt-config:/etc/dnstt
+    # You can expose UDP/53 directly, but on Linux that usually requires running
+    # the container with enough privileges/capabilities.
+    # Safer default: map host port 5300 -> container port 5300.
+    ports:
+      - "${DNSTT_PORT:-5300}:${DNSTT_PORT:-5300}/udp"
+      # If you really want UDP/53 on the host, set DNSTT_PORT=53 and keep the mapping in sync.
+
+volumes:
+  dnstt-config:
